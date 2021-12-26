@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
 
     # Local
-    'Ecoapp',
+    'app',
 
     # Third-party
     'allauth',
