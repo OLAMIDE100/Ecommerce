@@ -10,7 +10,7 @@ class Item(models.Model):
 
 
     def __str__(self):
-        return self.title
+        return self.drink_name
 
 
 
@@ -18,7 +18,7 @@ class OrderItem(models.Model):
     drink = models.ForeignKey(Item,on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.title
+        return self.drink_name
 
 
 
@@ -35,5 +35,5 @@ class Order(models.Model):
     ordered = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.title
+        return self.drink_name
 
