@@ -3,7 +3,11 @@ from .models import Item
 
 def homePage(request):
 
-    return render(request,'home-page.html')
+    context = {
+        'items' : Item.objects.all()
+    }
+
+    return render(request,'home-page.html',context)
 
 
 def checkoutPage(request):
