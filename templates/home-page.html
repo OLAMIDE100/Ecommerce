@@ -218,7 +218,8 @@
               <div class="view overlay">
                 <img src="https://mdbootstrap.com/img/Photos/Horizontal/E-commerce/Vertical/12.jpg" class="card-img-top"
                   alt="">
-                <a>
+                <a
+                  href = "{{ item.get_absolute_url}}" >
                   <div class="mask rgba-white-slight"></div>
                 </a>
               </div>
@@ -232,14 +233,19 @@
                 </a>
                 <h5>
                   <strong>
-                    <a href="" class="dark-grey-text">{{item.drink_name}}
+                    <a href="{{ item.get_absolute_url}}" class="dark-grey-text">{{item.title}}
                       <span class="badge badge-pill {{ item.get_label_display }}-color">New</span>
                     </a>
                   </strong>
                 </h5>
 
                 <h4 class="font-weight-bold blue-text">
-                  <strong>${{ item.drink_price}}</strong>
+                  {% if item.discount_price %}
+                  <strong>${{ item.discount_price}}</strong>
+                  {% else %}
+                  <strong>${{ item.price}}</strong>
+                  {% endif %}
+
                 </h4>
 
               </div>
