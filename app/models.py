@@ -51,7 +51,7 @@ class OrderItem(models.Model):
     quantity = models.IntegerField(default=1)
 
     def __str__(self):
-        return f"{self.quantity} of {self.item.title}"
+        return f"{self.quantity} {self.item.title}s"
 
     def get_total_item_price(self):
 
@@ -63,6 +63,13 @@ class OrderItem(models.Model):
 
     def get_total_saved(self):
         return self.get_total_item_price() - self.get_total_discount_item_price()
+
+    def get_final_price(self):
+
+        if self.item.discount_price:
+            return self.get_total_discount_item_price()
+        return self.get_total_item_price()
+
 
 
 
@@ -80,6 +87,14 @@ class Order(models.Model):
 
     def __str__(self):
         return self.user.username
+
+    def get_total(self):
+        total = 0
+
+        for order_item in self.items.all():
+            total += order_item.get_final_price()
+
+        return total
 
 
     
