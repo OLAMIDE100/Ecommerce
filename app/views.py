@@ -1,12 +1,15 @@
 from django.db import models
+from django.forms.forms import Form
 from django.shortcuts import get_object_or_404, redirect, render
-from .models import Item,OrderItem,Order
+from .models import Item,OrderItem,Order,BillingAddress
 from django.views.generic import ListView,DetailView,View
 from django.utils import timezone
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from .forms import CheckoutForm
+
 
 
 
@@ -47,16 +50,57 @@ class ItemDetailView(DetailView):
 
 
 
-@login_required
-def checkoutPage(request):
 
+class CheckoutView(LoginRequiredMixin,View):
+    def get(self,*args,**kwargs):
+        order = Order.objects.get(user=self.request.user,ordered=False)
 
-    order = Order.objects.get(user=request.user,ordered=False)
+        form = CheckoutForm()
 
-    context = {
-        'order' : order
-    }
-    return render(request,'checkout-page.html',context)
+        context = {
+            'order' : order,
+            'form' : form
+        }
+        return render(self.request,'checkout-page.html',context)
+
+    def post(self,*args,**kwargs):
+
+        form = CheckoutForm(self.request.POST or None)
+
+        try:
+            order = Order.objects.get(user=self.request.user,ordered=False)
+
+            if form.is_valid():
+                street_address = form.cleaned_data.get('street_address')
+                apartment_address = form.cleaned_data.get('apartment_address')
+                country = form.cleaned_data.get('country')
+                zip = form.cleaned_data.get('zip')
+                #same_billing_address = form.cleaned_data.get('same_billing_address')
+                #save_info = form.cleaned_data.get('save_info')
+                payment_option = form.cleaned_data.get('payment_option')
+
+                billing_address = BillingAddress(user = self.request.user,
+                                                street_address = street_address,
+                                                apartment_address = apartment_address,
+                                                country = country,
+                                                zip = zip,
+                                                #same_billing_address = same_billing_address,
+                                                #save_info = save_info,
+                                                #payment_option = payment_option
+                                                )
+                billing_address.save()
+                order.billing_address = billing_address
+                order.save()
+
+                return redirect('checkout')
+            messages.error(self.request,"failed checkout")
+            return redirect('checkout')
+
+        except ObjectDoesNotExist:
+            messages.error(self.request,"No Active Order")
+            return redirect("/")
+   
+
 
 
 
@@ -129,12 +173,16 @@ def remove_item_from_cart(request,slug):
             order_item = OrderItem.objects.filter(item=item,
                                        user=request.user,
                                        ordered = False)[0]
-            if order_item.quantity == 0:
+            if order_item.quantity == 1:
+                order.items.remove(order_item)
                 order_item.delete()
-            order_item.quantity -= 1
-            order_item.save()
-            messages.info(request,"single item was removed from your cart")
-            return  redirect('order_summary')
+                messages.info(request,"item was removed from your cart")
+                return  redirect('order_summary')
+            else:
+                order_item.quantity -= 1
+                order_item.save()
+                messages.info(request,"single item was removed from your cart")
+                return  redirect('order_summary')
         else:
             messages.info(request,"this item is not in your cart")
             return  redirect('product',slug=slug)

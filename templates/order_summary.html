@@ -37,8 +37,8 @@
           {% if order_item.item.discount_price %}
           <td>${{ order_item.get_total_discount_item_price }} 
           <span class="badge badge-primary">(Saving {{ order_item.get_total_saved }})</span>
-          <a href="{% url 'remove_from_cart' order_item.item.slug %}" class=" btn-md my-0 p float-right 2">
-            <i class="fas fa-trash color red"></i>
+          <a style='color : red;' href="{% url 'remove_from_cart' order_item.item.slug %}" >
+            <i class="fas fa-trash float-right 2"></i>
            </a>
           </td>
           {% else %}

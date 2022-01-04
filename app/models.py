@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+from django_countries.fields import CountryField
 
 
 from django.conf import settings
@@ -85,6 +86,9 @@ class Order(models.Model):
 
     ordered = models.BooleanField(default=False)
 
+    billing_address = models.ForeignKey('BillingAddress',
+                                        on_delete=models.SET_NULL,blank=True,null=True)
+
     def __str__(self):
         return self.user.username
 
@@ -95,6 +99,20 @@ class Order(models.Model):
             total += order_item.get_final_price()
 
         return total
+
+class BillingAddress(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
+    
+    street_address = models.CharField(max_length = 100 )
+    apartment_address = models.CharField(max_length=100)
+    country = CountryField(multiple=False)
+    zip = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.user.username
+
+
 
 
     
