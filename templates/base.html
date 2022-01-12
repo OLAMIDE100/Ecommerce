@@ -9,6 +9,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   {% block title %} <title>DRINK SHOP</title> {% endblock title %}
+  {% block extra_head %}
+  {% endblock extra_head %}
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.11.2/css/all.css">
   <!-- Bootstrap core CSS -->
@@ -141,11 +143,7 @@
         {% endfor %}
     {% endif %}
     </div>
-    
     {% block content %}
-
-
-
 
 
     {% endblock content %}
@@ -228,5 +226,7 @@
     new WOW().init();
 
   </script>
+  {% block extra_scripts %}
+  {% endblock extra_scripts %}
 </body>
 </html>

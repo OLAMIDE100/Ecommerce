@@ -1,7 +1,7 @@
 from django.db import models
 from django.forms.forms import Form
 from django.shortcuts import get_object_or_404, redirect, render
-from .models import Item,OrderItem,Order,BillingAddress
+from .models import Item,OrderItem,Order,BillingAddress,Payment
 from django.views.generic import ListView,DetailView,View
 from django.utils import timezone
 from django.contrib import messages
@@ -9,8 +9,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .forms import CheckoutForm
+from django.conf import settings
+import stripe
 
 
+stripe.api_key = settings.STRIPE_SECRET_KEY 
 
 
 
@@ -49,6 +52,90 @@ class ItemDetailView(DetailView):
     template_name = 'product-page.html'
 
 
+class PaymentView(View):
+    def get(self,*args,**kwargs):
+        order = Order.objects.get(user=self.request.user,ordered=False)
+
+        
+
+        context = {
+            'order' : order,
+            'STRIPE_PUBLIC_KEY' : settings.STRIPE_PUBLIC_KEY,
+        }
+        return render(self.request,"payment.html",context)
+
+    def post(self,*args,**kwargs):
+        order = Order.objects.get(user=self.request.user,ordered=False)
+        token =  self.request.POST.get('stripeToken')
+        amount= int(order.get_total() * 100)
+
+
+
+        try:
+            # Use Stripe's library to make requests...
+            charge = stripe.Charge.create(amount=amount,
+                              currency="usd",
+                                source=token,
+                                description="My First Test Charge (created for API docs)",)
+
+            
+            
+        
+            payment = Payment()
+            payment.stripe_charge_id = charge['id']
+            payment.user = self.request.user
+            payment.amount = order.get_total()
+            payment.save()
+
+
+            order.ordered = True
+            order.payment = payment
+            order.save()
+            messages.success(self.request,"Your Order was successful")
+            return redirect('/')
+        
+        
+        except stripe.error.CardError as e:
+        # Since it's a decline, stripe.error.CardError will be caught
+           body = e.json_body
+           err = body.get('error',{})
+           messages.error(self.request,f"{err.get('message')}")
+           return redirect("/")
+        except stripe.error.RateLimitError as e:
+
+            # Too many requests made to the API too quickly
+            messages.warning(self.request, "Rate limit error")
+            return redirect("/")
+
+        except stripe.error.InvalidRequestError as e:
+            # Invalid parameters were supplied to Stripe's API
+            print(e)
+            messages.warning(self.request, "Invalid parameters")
+            return redirect("/")
+
+        except stripe.error.AuthenticationError as e:
+            # Authentication with Stripe's API failed
+            # (maybe you changed API keys recently)
+            messages.warning(self.request, "Not authenticated")
+            return redirect("/")
+
+        except stripe.error.APIConnectionError as e:
+            # Network communication with Stripe failed
+            messages.warning(self.request, "Network error")
+            return redirect("/")
+
+        except stripe.error.StripeError as e:
+            # Display a very generic error to the user, and maybe send
+            # yourself an email
+            messages.warning(
+                self.request, "Something went wrong. You were not charged. Please try again.")
+            return redirect("/")
+
+        except Exception as e:
+            # send an email to ourselves
+            messages.warning(
+                self.request, "A serious error occurred. We have been notifed.")
+            return redirect("/")
 
 
 class CheckoutView(LoginRequiredMixin,View):
@@ -91,8 +178,16 @@ class CheckoutView(LoginRequiredMixin,View):
                 billing_address.save()
                 order.billing_address = billing_address
                 order.save()
+                if payment_option == 'P':
+                    return redirect('payment',payment_option = 'paystack')
 
-                return redirect('checkout')
+                elif payment_option == 'F':
+                    return redirect('payment',payment_option = 'flutterwave')
+
+                else:
+                     messages.error(self.request,"invalid payment optiion selected")
+                     return redirect('checkout')
+
             messages.error(self.request,"failed checkout")
             return redirect('checkout')
 
