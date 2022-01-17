@@ -1,2 +1,4 @@
 *.yml
 *.env
+media_root
+static_root

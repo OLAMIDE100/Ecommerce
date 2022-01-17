@@ -11,6 +11,8 @@ django-environ = "*"
 django-crispy-forms = "==1.7.2"
 django-countries = "*"
 stripe = "*"
+pillow = "*"
+django-debug-toolbar = "*"
 
 [dev-packages]
 

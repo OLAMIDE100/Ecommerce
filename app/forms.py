@@ -31,3 +31,11 @@ class CheckoutForm(forms.Form):
     same_billing_address = forms.BooleanField(required=False)
     save_info = forms.BooleanField(required=False)
     payment_option = forms.ChoiceField(choices= PAYMENT_CHOICES,widget=forms.RadioSelect())
+
+
+class CouponForm(forms.Form):
+    code = forms.CharField(widget=forms.TextInput(attrs={
+            'class':"form-control", 
+            'placeholder':"Promo code",
+            'aria-label':"Recipient's username",
+            'aria-describedby':"basic-addon2" }))

@@ -1,14 +1,14 @@
 from django.db import models
 from django.forms.forms import Form
 from django.shortcuts import get_object_or_404, redirect, render
-from .models import Item,OrderItem,Order,BillingAddress,Payment
+from .models import Coupon, Item,OrderItem,Order,BillingAddress,Payment
 from django.views.generic import ListView,DetailView,View
 from django.utils import timezone
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .forms import CheckoutForm
+from .forms import CheckoutForm,CouponForm
 from django.conf import settings
 import stripe
 
@@ -55,14 +55,18 @@ class ItemDetailView(DetailView):
 class PaymentView(View):
     def get(self,*args,**kwargs):
         order = Order.objects.get(user=self.request.user,ordered=False)
+        if order.billing_address:
+            context = {
+                'order' : order,
+                'STRIPE_PUBLIC_KEY' : settings.STRIPE_PUBLIC_KEY,
+                'DISPLAY_COUPON_FORM': False
+            }
+            return render(self.request,"payment.html",context)
 
-        
+        else:
+            messages.warning(self.request, "You dont have a billing addres")
+            return redirect("checkout")
 
-        context = {
-            'order' : order,
-            'STRIPE_PUBLIC_KEY' : settings.STRIPE_PUBLIC_KEY,
-        }
-        return render(self.request,"payment.html",context)
 
     def post(self,*args,**kwargs):
         order = Order.objects.get(user=self.request.user,ordered=False)
@@ -80,7 +84,13 @@ class PaymentView(View):
 
             
             
-        
+            
+            order_items = order.items.all()
+            order_items.update(ordered=True)
+            for item in order_items:
+                item.save()
+
+
             payment = Payment()
             payment.stripe_charge_id = charge['id']
             payment.user = self.request.user
@@ -140,15 +150,20 @@ class PaymentView(View):
 
 class CheckoutView(LoginRequiredMixin,View):
     def get(self,*args,**kwargs):
-        order = Order.objects.get(user=self.request.user,ordered=False)
+        try:
+            order = Order.objects.get(user=self.request.user,ordered=False)
+            form = CheckoutForm()
+            context = {
+                'order' : order,
+                'form' : form,
+                'couponform' : CouponForm(),
+                'DISPLAY_COUPON_FORM': True,
+            }
+            return render(self.request,'checkout-page.html',context)
+        except ObjectDoesNotExist:
+            messages.error(self.request,"No Active Order")
+            return redirect("checkout")
 
-        form = CheckoutForm()
-
-        context = {
-            'order' : order,
-            'form' : form
-        }
-        return render(self.request,'checkout-page.html',context)
 
     def post(self,*args,**kwargs):
 
@@ -314,3 +329,29 @@ def add_item_to_cart(request,slug):
         order.items.add(order_item)
         messages.info(request,"this item was added to your cart")
         return  redirect('product',slug=slug)
+
+def get_coupon(request,code):
+    try:
+        coupon = Coupon.objects.get(code=code)
+        return coupon
+
+    except ObjectDoesNotExist:
+        messages.info(request,'Coupon code does not exist')
+        return redirect('checkout')
+
+class AddCoupon(View):
+    def post(self,*args,**kwargs):
+        form = CouponForm(self.request.POST or None)
+        if form.is_valid():
+            try:
+                code = form.cleaned_data.get('code')
+                order = Order.objects.get(user=self.request.user,ordered=False)
+                order.coupon = get_coupon(self.request,code)
+                order.save()
+                messages.info(self.request,'Sucessfuly added coupon')
+                return redirect('checkout')
+
+            except ObjectDoesNotExist:
+                messages.info(self.request,'You do not have an Active Order')
+                return redirect('checkout')
+
