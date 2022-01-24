@@ -7,10 +7,11 @@ from django_countries.fields import CountryField
 from django.conf import settings
 
 
+
 CATEGORY_CHOICES = (
     ('S','Shirt'),
     ('SW','Sport Wear'),
-    ('O','Out Weat')
+    ('O','Native_wear')
 )
 
 LABEL_CHOICES = (
@@ -18,7 +19,10 @@ LABEL_CHOICES = (
     ('S','secondary'),
     ('D','danger')
 )
-
+ADDRESS_CHOICES = (
+    ('B','billing_address'),
+    ('S','shipping_address'),
+)
 
 
 class Item(models.Model):
@@ -79,6 +83,8 @@ class OrderItem(models.Model):
 class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE)
+    
+    ref_code = models.CharField(max_length=20)
 
     items = models.ManyToManyField(OrderItem)
 
@@ -88,14 +94,21 @@ class Order(models.Model):
 
     ordered = models.BooleanField(default=False)
 
-    billing_address = models.ForeignKey('BillingAddress',
+    billing_address = models.ForeignKey('Address',related_name='billing_address',
+                                        on_delete=models.SET_NULL,blank=True,null=True)
+    shipping_address = models.ForeignKey('Address',related_name='shipping_address',
                                         on_delete=models.SET_NULL,blank=True,null=True)
 
     payment = models.ForeignKey('Payment',
                                         on_delete=models.SET_NULL,blank=True,null=True)
 
     coupon = models.ForeignKey('Coupon',
-                                        on_delete=models.SET_NULL,blank=True,null=True)                                    
+                                        on_delete=models.SET_NULL,blank=True,null=True)
+
+    being_delivered = models.BooleanField(default=False)
+    recieved = models.BooleanField(default=False)
+    refund_requested = models.BooleanField(default=False)
+    refund_granted = models.BooleanField(default=False)                                    
 
     def __str__(self):
         return self.user.username
@@ -105,23 +118,29 @@ class Order(models.Model):
 
         for order_item in self.items.all():
             total += order_item.get_final_price()
+        
+        if self.coupon and total != 0:
+            total -= self.coupon.amount
 
-        total -= self.coupon.amount
+
 
         return total
 
-class BillingAddress(models.Model):
+class Address(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE)
     
-    street_address = models.CharField(max_length = 100 )
+    street_address = models.CharField(max_length = 100)
     apartment_address = models.CharField(max_length=100)
     country = CountryField(multiple=False)
     zip = models.CharField(max_length=100)
-    
+    address_type = models.CharField(max_length=1,choices=ADDRESS_CHOICES)
+    default = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
+    class Meta:
+        verbose_name_plural = "Addresses"
 
 
 class Payment(models.Model):
@@ -138,10 +157,19 @@ class Payment(models.Model):
 class Coupon(models.Model):
     code = models.CharField(max_length=50)
     amount = models.FloatField()
-
+    
 
     def __str__(self):
         return self.code
+
+class Refund(models.Model):
+    order = models.ForeignKey('Order',on_delete=models.CASCADE)
+    reason = models.TextField()
+    accepted = models.BooleanField(default=False)
+    email = models.EmailField()
+
+    def __str__(self):
+        return f"{self.pk}"
 
 
     

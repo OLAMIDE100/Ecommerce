@@ -13,23 +13,27 @@ PAYMENT_CHOICES = (
 
 
 class CheckoutForm(forms.Form):
-    street_address = forms.CharField(widget= forms.TextInput(attrs={
-        'placeholder' : "1234 Main St"
-    }))
-
-    apartment_address = forms.CharField(widget= forms.TextInput(attrs={
-        'placeholder' : "Apartment or suite"
-    }),required=False)
-
-    country = CountryField(blank_label='(select country)').formfield(widget=CountrySelectWidget(attrs = {
+    shipping_address1 = forms.CharField(required=False)
+    shipping_address2 = forms.CharField(required=False)
+    shipping_country = CountryField(blank_label='(select country)').formfield(required=False,widget=CountrySelectWidget(attrs = {
         'class' :"custom-select d-block w-100" 
     }))
+    shipping_zip = forms.CharField(required=False)
 
-    zip = forms.CharField(widget=TextInput(attrs = {
-        'class' : "form-control"
+    billing_address1 = forms.CharField(required=False)
+    billing_address2 = forms.CharField(required=False)
+    billing_country = CountryField(blank_label='(select country)').formfield(required=False,widget=CountrySelectWidget(attrs = {
+        'class' :"custom-select d-block w-100" 
     }))
+    billing_zip = forms.CharField(required=False)
+
+
+
     same_billing_address = forms.BooleanField(required=False)
-    save_info = forms.BooleanField(required=False)
+    set_default_shipping = forms.BooleanField(required=False)
+    use_default_shipping = forms.BooleanField(required=False)
+    set_default_billing = forms.BooleanField(required=False)
+    use_default_billing = forms.BooleanField(required=False)
     payment_option = forms.ChoiceField(choices= PAYMENT_CHOICES,widget=forms.RadioSelect())
 
 
@@ -39,3 +43,8 @@ class CouponForm(forms.Form):
             'placeholder':"Promo code",
             'aria-label':"Recipient's username",
             'aria-describedby':"basic-addon2" }))
+
+class RequestRefundForm(forms.Form):
+    ref_code = forms.CharField(max_length=20)
+    message = forms.CharField(widget=forms.Textarea)
+    email = forms.EmailField()

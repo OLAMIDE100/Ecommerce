@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %} <title>REQUEST FUND PAGE</title> {% endblock title %}
+
+{% block content %}
+<main>
+    <div class='container'>
+    <h2>REQUEST FUND</h2>
+    <form method='POST'>
+        {% csrf_token %}
+        {{ form|crispy}}
+        <button class='btn btn-primary' type='submit'>SUBMIT</button>
+    </form>
+    </div>
+</main>
+
+
+
+
+
+
+{% endblock content %}

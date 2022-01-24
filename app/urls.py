@@ -1,7 +1,9 @@
+from pathlib import Path
 from django.urls import path
 from .views import (HomeView,ItemDetailView, OrderSummaryView,CheckoutView,
                     add_to_cart,remove_from_cart,OrderSummaryView,
-                    remove_item_from_cart,add_item_to_cart,PaymentView,AddCoupon)
+                    remove_item_from_cart,add_item_to_cart,PaymentView,AddCoupon,
+                    RequestRefundView)
 
 
 urlpatterns = [
@@ -14,6 +16,7 @@ urlpatterns = [
     path('remove_item_from_cart/<slug>/',remove_item_from_cart,name='remove_item_from_cart'),
     path('add_item_to_cart/<slug>/',add_item_to_cart,name='add_item_to_cart'),
     path('payment/<payment_option>/',PaymentView.as_view(),name='payment'),
-    path('add_coupon/',AddCoupon.as_view(),name='add_coupon')
+    path('add_coupon/',AddCoupon.as_view(),name='add_coupon'),
+    path('request_refund/',RequestRefundView.as_view(),name='request_refund')
 
 ]
