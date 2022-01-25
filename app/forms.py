@@ -48,3 +48,8 @@ class RequestRefundForm(forms.Form):
     ref_code = forms.CharField(max_length=20)
     message = forms.CharField(widget=forms.Textarea)
     email = forms.EmailField()
+
+class PaymentForm(forms.Form):
+    stripeToken = forms.CharField(required=False)
+    save = forms.BooleanField(required=False)
+    use_default = forms.BooleanField(required=False)

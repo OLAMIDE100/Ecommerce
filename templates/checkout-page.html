@@ -31,7 +31,7 @@
               <h3>Shipping Address</h3>
 
               
-              <div class="hideable shipping form">
+              <div class="hideable_shipping_form">
 
 
                 <!--address-->
@@ -94,13 +94,14 @@
                 <label class="custom-control-label" for="use_default_shipping">Use default Shipping Address : {{ default_shipping_address.street_address|truncatechars:10}}</label>
               </div>
               {% endif %}
+              
               <hr>
               
 
               <h3>Billing Address</h3>
 
               
-              <div class="hideable shipping form">
+              <div class="hideable_billing_form">
 
 
                 <!--address-->
@@ -158,12 +159,14 @@
                 </div>
                 <!--Grid row-->
               </div>
+              <div class='hide_billing'>
               {% if default_billing_address%}
               <div class="custom-control custom-checkbox">
                 <input type="checkbox" class="custom-control-input" id="use_default_billing" name='use_default_billing'>
                 <label class="custom-control-label" for="use_default_billing">Use default Billing Address : {{ default_billing_address.street_address|truncatechars:10}}</label>
               </div>
               {% endif %}
+              </div>
               <hr>
               
 
@@ -209,4 +212,48 @@
 
 {% endblock content %}
 
-</html>
+{% block extra_scripts %}
+
+<script>
+  var hideable_billing_form = $('.hideable_billing_form');
+  var hideable_shipping_form = $('.hideable_shipping_form');
+  var hide_billing = $('.hide_billing')
+
+  var use_default_billing = document.querySelector("input[name=use_default_billing]");
+  var use_default_shipping = document.querySelector("input[name=use_default_shipping]");
+  var same_billing_address = document.querySelector("input[name=same_billing_address]");
+
+  use_default_billing.addEventListener(
+    "change", function(){
+      if (this.checked){
+        hideable_billing_form.hide()
+      } else {
+        hideable_billing_form.show()
+      }
+    }
+  )
+
+  use_default_shipping.addEventListener(
+    "change", function(){
+      if (this.checked){
+        hideable_shipping_form.hide()
+      } else {
+        hideable_shipping_form.show()
+      }
+    }
+  )
+  same_billing_address.addEventListener(
+    "change", function(){
+      if (this.checked){
+        hideable_billing_form.hide();
+        hide_billing.hide()
+      } else {
+        hideable_billing_form.show();
+        hide_billing.show()
+      }
+    }
+  )
+
+</script>
+
+{% endblock extra_scripts %}
